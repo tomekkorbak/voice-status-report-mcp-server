@@ -2,7 +2,7 @@
 
 ![Python Package](https://github.com/tomekkorbak/voice-status-report-mcp-server/workflows/Python%20Package/badge.svg) [![PyPI version](https://badge.fury.io/py/voice-status-report-mcp-server.svg)](https://badge.fury.io/py/voice-status-report-mcp-server) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/release/python-3120/)
 
-A [Model Context Protocol](https://modelcontextprotocol.io/introduction) (MCP) server that provides voice status updates using [OpenAI's text-to-speech API](https://platform.openai.com/docs/guides/text-to-speech). This allows language models to communicate with users through short voice messages: reporting on the progress of a task, or confirming that a command has been executed.
+A [Model Context Protocol](https://modelcontextprotocol.io/introduction) (MCP) server that provides voice status updates using [OpenAI's text-to-speech API](https://platform.openai.com/docs/guides/text-to-speech). This allows language models to communicate with users through short voice messages: reporting on the progress of a task, or confirming that a command has been executed. It's espesially useful when working with Cursor or Claude code: you can give the agent a task, go on to do something else but keep receiving status reports on agent's progess and when it's done with its task and needs your attention.
 
 This MCP server is meant to be batteries included: the description of the `summarize` tool (prepended to system message by most MCP clients) asks the model to use this tool to report on the progress of a task.
 
