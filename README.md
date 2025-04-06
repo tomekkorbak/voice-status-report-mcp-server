@@ -67,21 +67,28 @@ voice-status-report-mcp-server --instructions "Voice should be confident and aut
       "command": "uvx",
       "args": [
         "voice-status-report-mcp-server",
-        "--voice",
-        "coral"
       ],
       "env": {
         "OPENAI_API_KEY": "YOUR_OPENAI_API_KEY"
       }
     },
-    "voice-status-friendly": {
+  }
+}
+```
+
+When using non-default arguments, you can use the following configuration:
+
+```json
+{
+  "mcpServers": {
+    "voice-status-report-mcp-server": {
       "command": "uvx",
       "args": [
         "voice-status-report-mcp-server",
-        "--voice",
-        "nova",
-        "--speed",
-        "3.0"
+        "--ding",
+        "--voice", "nova",
+        "--speed", "3.0",
+        "--instructions", "Voice should be confident and authoritative"
       ],
       "env": {
         "OPENAI_API_KEY": "YOUR_OPENAI_API_KEY"
