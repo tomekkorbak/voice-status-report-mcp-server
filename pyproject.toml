@@ -9,6 +9,7 @@ dependencies = [
  "openai>=1.68.2",
  "pydub>=0.25.1",
  "click>=8.1.0",
+ "typing-extensions>=4.0.0",
 ]
 [[project.authors]]
 name = "Tomek Korbak"
@@ -20,3 +21,14 @@ build-backend = "hatchling.build"
 
 [project.scripts]
 voice-status-report-mcp-server = "voice_status_report_mcp_server:main"
+
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+
+[[tool.mypy.overrides]]
+module = ["pydub.*"]
+ignore_missing_imports = true

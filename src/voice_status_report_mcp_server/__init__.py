@@ -1,7 +1,8 @@
 from . import server
 import asyncio
+from typing import Any
 
-def main():
+def main() -> Any:
     """Main entry point for the package."""
     return server.cli_main()
 

@@ -36,9 +36,58 @@ Update your `claude_desktop_config.json` (located in `~/Library/Application\ Sup
 
 ## Command Line Options
 
-The server accepts the following command line option:
+The server accepts the following command line options:
 
-- `--ding`: Enable the notification sound that plays before each voice message. By default, the notification sound is disabled.
+- `--ding`: Enable the ding sound that plays before each voice message. By default, the ding sound is disabled.
+- `--voice [VOICE]`: Choose the voice for speech generation. Available options: `alloy`, `ash`, `coral` (default), `echo`, `fable`, `onyx`, `nova`, `sage`, `shimmer`.
+- `--speed SPEED`: Set the speech speed (0.5-4.0, where higher is faster). Default is 4.0.
+- `--instructions TEXT`: Provide custom voice instructions for the TTS model. By default, the server uses a preset instruction for a calm, friendly voice.
+
+### Examples
+
+```bash
+# Run with ding sound enabled and a different voice
+voice-status-report-mcp-server --ding --voice nova
+
+# Run with a slower speech speed
+voice-status-report-mcp-server --speed 2.0
+
+# Run with custom voice instructions
+voice-status-report-mcp-server --instructions "Voice should be confident and authoritative"
+```
+
+### Claude for Desktop Configuration Examples
+
+```json
+{
+  "mcpServers": {
+    "voice-status-calm": {
+      "command": "uvx",
+      "args": [
+        "voice-status-report-mcp-server",
+        "--voice",
+        "coral"
+      ],
+      "env": {
+        "OPENAI_API_KEY": "YOUR_OPENAI_API_KEY"
+      }
+    },
+    "voice-status-friendly": {
+      "command": "uvx",
+      "args": [
+        "voice-status-report-mcp-server",
+        "--voice",
+        "nova",
+        "--speed",
+        "3.0"
+      ],
+      "env": {
+        "OPENAI_API_KEY": "YOUR_OPENAI_API_KEY"
+      }
+    }
+  }
+}
+```
 
 ## Example Usage
 

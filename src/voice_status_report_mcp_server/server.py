@@ -6,51 +6,67 @@ import contextlib
 import asyncio
 import click
 from pathlib import Path
+from typing import Literal, Any
 
 from mcp.server.fastmcp import FastMCP
 from openai import OpenAI
-from pydub import AudioSegment
-from pydub.playback import play
+from pydub import AudioSegment  # type: ignore
+from pydub.playback import play  # type: ignore
 
 
 client = OpenAI()
 
-# Path to the local notification sound file
+# Path to the ding sound file
 PACKAGE_DIR = Path(__file__).parent
-NOTIFICATION_SOUND = str(PACKAGE_DIR / "ding.aiff")
+DING_SOUND = str(PACKAGE_DIR / "ding.aiff")
 
-# Global setting for whether to play the ding sound
+# OpenAI TTS supported voices
+VoiceType = Literal["alloy", "ash", "coral", "echo", "fable", "onyx", "nova", "sage", "shimmer"]
+
+# Global settings
 PLAY_DING = False
+TTS_VOICE: VoiceType = "coral"
+TTS_SPEED = 4.0
+TTS_INSTRUCTIONS = """Voice Affect: Calm, instilling trust without much intensity, in control, relaxed.
+
+Tone: Sincere, empathetic, light-hearted, relaxed.
+
+Pacing: Quick delivery when desribing things but un-intense. Sometimes deliberate pauses.
+
+Emotion: Friendly and warm
+
+Personality: Relatable. Very friendly and warm."""
 
 TOOL_DESCRIPTION = "Use this to send a short audio message to the user concisely (one 10-15 word sentence) summarizing what you've done and why. Use this tool after _every_ time you generated a code snippet or ran a command as well as when you give control back to the user."
 
 def generate_speech(
     text: str,
     model: str = "gpt-4o-mini-tts",
-    voice: str = "coral",
+    voice: VoiceType = "coral",
     speed: float = 4.0,
-    instructions: str = None
+    instructions: str | None = None
 ) -> bytes:
-    response = client.audio.speech.create(
+    # Ignore type checking for the OpenAI API call as it's complex to satisfy mypy
+    response = client.audio.speech.create(  # type: ignore
         model=model,
         voice=voice,
         input=text,
         speed=speed,
-        instructions=instructions,
+        instructions=instructions,  # type: ignore
     )
     return response.content
 
-def play_audio(audio_bytes: bytes, notification_sound_path: str = NOTIFICATION_SOUND) -> None:
-    # Play notification sound first if enabled and available
-    if PLAY_DING and os.path.exists(notification_sound_path):
+def play_audio(audio_bytes: bytes, ding_sound_path: str = DING_SOUND) -> None:
+    # Play ding sound first if enabled and available
+    if PLAY_DING and os.path.exists(ding_sound_path):
         try:
-            notification_sound = AudioSegment.from_file(notification_sound_path)
+            ding_sound = AudioSegment.from_file(ding_sound_path)
             # Suppress stdout during playback
             with open(os.devnull, 'w') as devnull:
                 with contextlib.redirect_stdout(devnull):
-                    play(notification_sound)
+                    play(ding_sound)
         except Exception as e:
-            print(f"Warning: Could not play notification sound: {e}", file=sys.stderr)
+            print(f"Warning: Could not play ding sound: {e}", file=sys.stderr)
     
     # Then play the generated speech
     audio = AudioSegment.from_file(io.BytesIO(audio_bytes), format="mp3")
@@ -64,16 +80,6 @@ mcp = FastMCP("Voice Status Report")
 # Create a semaphore to ensure only one audio playback happens at a time
 audio_semaphore = threading.Semaphore(1)
 
-INSTRUCTIONS = """Voice Affect: Calm, instilling trust without much intensity, in control, relaxed.
-
-Tone: Sincere, empathetic, light-hearted, relaxed.
-
-Pacing: Quick delivery when desribing things but un-intense. Sometimes deliberate pauses.
-
-Emotion: Friendly and warm
-
-Personality: Relatable. Very friendly and warm."""
-
 @mcp.tool(description=TOOL_DESCRIPTION)
 def summarize(text: str) -> dict[str, str]:
     try:
@@ -81,17 +87,17 @@ def summarize(text: str) -> dict[str, str]:
         audio_bytes = generate_speech(
             text=text,
             model="gpt-4o-mini-tts",
-            voice="coral",
-            speed=4,
-            instructions=INSTRUCTIONS
+            voice=TTS_VOICE,  # Use global setting
+            speed=TTS_SPEED,  # Use global setting
+            instructions=TTS_INSTRUCTIONS  # Use global setting
         )
         
         # Schedule audio playback in background
-        def play_audio_in_background():
+        def play_audio_in_background() -> None:
             try:
                 # Acquire the semaphore - blocks if another thread has it
                 audio_semaphore.acquire()
-                play_audio(audio_bytes, NOTIFICATION_SOUND)
+                play_audio(audio_bytes, DING_SOUND)
             except Exception as e:
                 # Report exceptions while avoiding stdout pollution
                 print(f"Error in background audio playback: {e}", file=sys.stderr)
@@ -106,22 +112,54 @@ def summarize(text: str) -> dict[str, str]:
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
-async def async_main(ding: bool = False) -> None:
+async def async_main(
+    ding: bool = False,
+    voice: VoiceType = "coral",
+    speed: float = 4.0,
+    instructions: str | None = None
+) -> None:
     """Asynchronous main function that starts the MCP server."""
-    global PLAY_DING
-    PLAY_DING = ding
+    global PLAY_DING, TTS_VOICE, TTS_SPEED, TTS_INSTRUCTIONS
     
+    # Set global settings
+    PLAY_DING = ding
+    TTS_VOICE = voice
+    TTS_SPEED = speed
+    if instructions:
+        TTS_INSTRUCTIONS = instructions
+    
+    # Print status
     ding_status = "enabled" if PLAY_DING else "disabled"
-    print(f"Starting the Voice Status Report MCP server! (Notification sound: {ding_status})")
+    print(f"Starting the Voice Status Report MCP server!")
+    print(f"- Ding sound: {ding_status}")
+    print(f"- Voice: {TTS_VOICE}")
+    print(f"- Speed: {TTS_SPEED}")
     
     # Create an asyncio-compatible version of the MCP server run
     await asyncio.to_thread(mcp.run, transport="stdio")
 
 @click.command()
-@click.option("--ding", is_flag=True, help="Enable notification sound before speech")
-def cli_main(ding: bool) -> None:
+@click.option("--ding", is_flag=True, help="Enable ding sound before speech")
+@click.option(
+    "--voice", 
+    type=click.Choice(["alloy", "ash", "coral", "echo", "fable", "onyx", "nova", "sage", "shimmer"]),
+    default="coral",
+    help="Voice to use for speech generation"
+)
+@click.option(
+    "--speed", 
+    type=float,
+    default=4.0,
+    help="Speech speed (0.5-4.0, where higher is faster)"
+)
+@click.option(
+    "--instructions", 
+    type=str,
+    help="Custom voice instructions for the TTS model"
+)
+def cli_main(ding: bool, voice: VoiceType, speed: float, instructions: str | None) -> None:
     """Command-line entry point that calls the async main function."""
-    asyncio.run(async_main(ding))
+    asyncio.run(async_main(ding, voice, speed, instructions))
     
 # Keep the main function for backward compatibility and direct imports
 main = cli_main
