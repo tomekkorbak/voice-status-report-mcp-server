@@ -6,7 +6,7 @@ import contextlib
 import asyncio
 import click
 from pathlib import Path
-from typing import Literal, Any
+from typing import Literal
 
 from mcp.server.fastmcp import FastMCP
 from openai import OpenAI
@@ -130,7 +130,7 @@ async def async_main(
     
     # Print status
     ding_status = "enabled" if PLAY_DING else "disabled"
-    print(f"Starting the Voice Status Report MCP server!")
+    print("Starting the Voice Status Report MCP server!")
     print(f"- Ding sound: {ding_status}")
     print(f"- Voice: {TTS_VOICE}")
     print(f"- Speed: {TTS_SPEED}")

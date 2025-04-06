@@ -1,5 +1,4 @@
 from . import server
-import asyncio
 from typing import Any
 
 def main() -> Any:
